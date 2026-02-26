@@ -3,7 +3,11 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Schema } from 'mongoose';
-import { S3Client  } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import multer from 'multer';
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+
 
 dotenv.config();
 const app = express();
@@ -15,7 +19,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
+// MongoDB Connection configuration
 const connectDB = async ()=>{
     try{
         await mongoose.connect(process.env.MONGODB_URI);
@@ -25,7 +29,7 @@ const connectDB = async ()=>{
         console.error('MongoDB connection failed: ',error.message);
     }
 } 
-
+// Actually call connection
 connectDB();
 
 // Defining your schema
@@ -46,10 +50,7 @@ const postSchema = new Schema({
 
 const Post = mongoose.model('Post', postSchema);
 
-const s3Client = new S3Client({});
-
-// s3Client();
-
+// test if web app is running
 app.get('/',(req,res)=>{
     res.json({
         status: 'Sucsess',
@@ -57,8 +58,13 @@ app.get('/',(req,res)=>{
         timestamp: new Date().toISOString()
     });
 });
+const PORT = process.env.PORT || 3000
+app.listen(PORT, function(){
+    console.log(`Web Server is on PORT ${PORT}`)
+});
 
-app.get('/posts', async (req, res)=>{
+// test connection of MongoDB
+app.get('/testMongoDB', async (req, res)=>{
     try{
         const post = await Post.find({});
         console.log('All posts find on MongoDB: ',post);
@@ -69,9 +75,65 @@ app.get('/posts', async (req, res)=>{
     }
 });
 
+// AWS S3 image upload Configuration
+// https://docs.aws.amazon.com/AmazonS3/latest/API/s3_example_s3_PutObject_section.html
+const connectS3Client = new S3Client({
+    region:  process.env.AWS_REGION || 'region',
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'AWS_ACCESS_KEY_ID',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'AWS_SECRET_ACCESS_KEY'
+    }
+});
 
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
-const PORT = process.env.PORT || 3000
-app.listen(PORT, function(){
-    console.log(`Web Server is on PORT ${PORT}`)
-})
+app.post('/upload', upload.single('file'), async (req, res) => {
+    if (!req.file) return res.status(400).send('No files uploaded!');
+
+    const params = {
+        Bucket: process.env.AWS_BUCKET_NAME || 'AWS_BUCKET_NAME', // unique filename in s3
+        Key: `uploads/${Date.now()}_${req.file.originalname}`, // the buffer from multer
+        Body: req.file.buffer, // so that the s3 store file correct not mixup types
+        ContentType: req.file.mimetype
+    };
+
+    try{
+        const command = new PutObjectCommand(params);
+        await connectS3Client.send(command);
+        res.status(200).json({ message: "Upload Successfully!"})
+    }catch(error){
+        console.log(error.message);
+        res.status(500).send("S3 Upload Error!")
+    }
+
+});
+
+// check if uploaded seccussfully
+// This route is now a "Fixed" path
+// We get the key from the ?key= part of the URL
+app.get("/get-image", async (req, res) => {
+  const fileKey = req.query.key; 
+
+// DEBUG: Check if variables are actually loading
+  console.log("Looking for S3 Key:", fileKey);
+//   console.log("Region:", process.env.AWS_REGION);
+//   console.log("Bucket:", process.env.AWS_BUCKET_NAME);
+//   console.log("Key Exists?:", !!fileKey);
+  if (!fileKey) {
+    return res.status(400).json({ error: "Missing 'key' parameter" });
+  }
+
+  try {
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: fileKey,
+    });
+
+    const url = await getSignedUrl(connectS3Client, command, { expiresIn: 3600 });
+    res.json({ url });
+  } catch (err) {
+    console.error("S3 Error:", err);
+    res.status(500).json({ error: "Could not generate S3 URL" });
+  }
+});
