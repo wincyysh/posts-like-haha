@@ -1,3 +1,4 @@
+// /backend/server.js
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -7,14 +8,10 @@ import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3
 import multer from 'multer';
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-
-
-dotenv.config();
-const app = express();
-
-
 // https://expressjs.com/en/resources/middleware/cors.html
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS
+dotenv.config();
+const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -88,19 +85,34 @@ const connectS3Client = new S3Client({
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-app.post('/upload', upload.single('file'), async (req, res) => {
-    if (!req.file) return res.status(400).send('No files uploaded!');
-
-    const params = {
-        Bucket: process.env.AWS_BUCKET_NAME || 'AWS_BUCKET_NAME', // unique filename in s3
-        Key: `uploads/${Date.now()}_${req.file.originalname}`, // the buffer from multer
-        Body: req.file.buffer, // so that the s3 store file correct not mixup types
-        ContentType: req.file.mimetype
-    };
-
+app.post('/posts', upload.single('image'), async (req, res) => {
     try{
+        if (!req.file) return res.status(400).send('No image files uploaded!');
+        const fileName = `posts/${Date.now()}_${req.file.originalname}`; // the buffer from multer;
+        const params = {
+            Bucket: process.env.AWS_BUCKET_NAME || 'AWS_BUCKET_NAME', // unique filename in s3
+            Key: fileName,
+            Body: req.file.buffer, // so that the s3 store file correct not mixup types
+            ContentType: req.file.mimetype
+        };
         const command = new PutObjectCommand(params);
         await connectS3Client.send(command);
+        imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+
+        const newPost = new Post({
+            content: req.content,
+            author: {
+                id: req.body.content || '000',
+                name: req.body.name || 'Anonymous'
+            },
+            imageUrl,
+            reactions: { likes: 0, haha: 0 }
+        });
+        const savedPost = await newPost.save();
+        res.status(201).json({ 
+            status: 'success', 
+            data: savedPost 
+        });
         res.status(200).json({ message: "Upload Successfully!"})
     }catch(error){
         console.log(error.message);
@@ -126,8 +138,8 @@ app.get("/get-image", async (req, res) => {
 
   try {
     const command = new GetObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: fileKey,
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: fileKey,
     });
 
     const url = await getSignedUrl(connectS3Client, command, { expiresIn: 3600 });

@@ -1,7 +1,12 @@
+// frontend/src/components/ContentCreator.jsx
 import React, { useState } from "react";
+import { useDispatch } from 'react-redux';
+import { addPost } from './../store/feedSlices';
+import axios from "axios";
 import "./ContentCreator.css";
 
 const ContentCreator = () => {
+    const dispatch = useDispatch();
     const [content, setContent] = useState('');
     const [image, setImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
@@ -16,27 +21,32 @@ const ContentCreator = () => {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if(!content.trim()){
-            alert('Enter some content!');
-            return;
-        }
-        
-        const postData ={
-            content,
-            authorName: 'Test User',
-            authorId: '001',
-            image
-        };
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		
+		if (!content.trim()) {
+			alert('Please enter some content');
+			return;
+		}
 
-        try{
-            
-        }catch(error){
-            alert(error)
-        }
-    };
+		const postData = {
+			content,
+			authorName: 'march 15',
+			authorId: '123',
+			image
+		};
 
+		try {
+			const test = await dispatch(addPost(postData));
+			console.log(test);
+			// Clear form
+			setContent('');
+			setImage(null);
+			setImagePreview(null);
+		} catch (err) {
+			alert('❌ Failed to create post: ' + err);
+		}
+	};
 
     return (
         <div>
