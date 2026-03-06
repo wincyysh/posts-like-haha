@@ -1,3 +1,4 @@
+// frontend/src/app.jsx
 import React from 'react';
 import ContentCreator from './components/ContentCreator';
 

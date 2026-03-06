@@ -7,6 +7,7 @@ import { Schema } from 'mongoose';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import multer from 'multer';
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+// import { feedSlice } from './../frontend/src/store/feedSlices'
 
 // https://expressjs.com/en/resources/middleware/cors.html
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS
@@ -22,6 +23,7 @@ const connectDB = async ()=>{
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('MongoDB connected');
         console.log('Database:', mongoose.connection.name);
+        console.log('connectionState: ', mongoose.connection.readyState);
     }catch(error){
         console.error('MongoDB connection failed: ',error.message);
     }
@@ -38,6 +40,7 @@ const postSchema = new Schema({
     id: String,
     name: String
   },
+  imageUrl: String,
   interaction: {
     like: { type: Number, default: 0 },
     haha: { type: Number, default: 0 }
@@ -61,11 +64,12 @@ app.listen(PORT, function(){
 });
 
 // test connection of MongoDB
-app.get('/testMongoDB', async (req, res)=>{
+app.get('/posts', async (req, res)=>{
     try{
         const post = await Post.find({});
-        console.log('All posts find on MongoDB: ',post);
         res.json(post);
+        console.log('All posts find on MongoDB: ',post);
+
     }catch(error){
         console.error('Failed to fetch MongoDB posts: ', error.message);
         res.status(500).json({ message: "Server error" });
@@ -75,7 +79,7 @@ app.get('/testMongoDB', async (req, res)=>{
 // AWS S3 image upload Configuration
 // https://docs.aws.amazon.com/AmazonS3/latest/API/s3_example_s3_PutObject_section.html
 const connectS3Client = new S3Client({
-    region:  process.env.AWS_REGION || 'region',
+    region:  process.env.AWS_REGION || 'AWS_REGION',
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'AWS_ACCESS_KEY_ID',
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'AWS_SECRET_ACCESS_KEY'
@@ -87,36 +91,47 @@ const upload = multer({ storage: storage });
 
 app.post('/posts', upload.single('image'), async (req, res) => {
     try{
-        if (!req.file) return res.status(400).send('No image files uploaded!');
-        const fileName = `posts/${Date.now()}_${req.file.originalname}`; // the buffer from multer;
-        const params = {
-            Bucket: process.env.AWS_BUCKET_NAME || 'AWS_BUCKET_NAME', // unique filename in s3
-            Key: fileName,
-            Body: req.file.buffer, // so that the s3 store file correct not mixup types
-            ContentType: req.file.mimetype
-        };
-        const command = new PutObjectCommand(params);
-        await connectS3Client.send(command);
-        imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+        let awsImageUrl = '';
+        if (req.file){
+            // unique imageName in s3, the buffer from multer;
+            const imageName = `posts/${Date.now()}_${req.file.originalname}`; 
+            const params = {
+                Bucket: process.env.AWS_BUCKET_NAME || 'AWS_BUCKET_NAME', 
+                Key: imageName,
+                // so that the s3 store file correct not mixup types
+                Body: req.file.buffer, 
+                ContentType: req.file.mimetype
+            };
+            const command = new PutObjectCommand(params);
+            await connectS3Client.send(command);
+            awsImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageName}`;
+        }
+        // // DEBUG: if no image & no response
+        // }else{
+        //     return res.status(400).send('No image files uploaded!');
+        // }
+
+        const { content, authorName, authorId } = req.body;
 
         const newPost = new Post({
-            content: req.content,
+            content: content,
             author: {
-                id: req.body.content || '000',
-                name: req.body.name || 'Anonymous'
+                id: authorId,
+                name: authorName
             },
-            imageUrl,
-            reactions: { likes: 0, haha: 0 }
+            imageUrl: awsImageUrl,
+            interaction: { likes: 0, haha: 0 }
         });
+
         const savedPost = await newPost.save();
-        res.status(201).json({ 
-            status: 'success', 
-            data: savedPost 
-        });
-        res.status(200).json({ message: "Upload Successfully!"})
+        console.log("Post saved:", savedPost);
+        // Send the saved post back to React
+        res.status(201).json(savedPost);
+
     }catch(error){
         console.log(error.message);
-        res.status(500).send("S3 Upload Error!")
+        // Send error back to React
+        res.status(500).json({ error: error.message }); 
     }
 
 });
@@ -128,7 +143,7 @@ app.get("/get-image", async (req, res) => {
   const fileKey = req.query.key; 
 
 // DEBUG: Check if variables are actually loading
-  console.log("Looking for S3 Key:", fileKey);
+//   console.log("Looking for S3 Key:", fileKey);
 //   console.log("Region:", process.env.AWS_REGION);
 //   console.log("Bucket:", process.env.AWS_BUCKET_NAME);
 //   console.log("Key Exists?:", !!fileKey);

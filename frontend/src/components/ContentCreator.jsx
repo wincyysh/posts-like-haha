@@ -1,13 +1,15 @@
 // frontend/src/components/ContentCreator.jsx
 import React, { useState } from "react";
 import { useDispatch } from 'react-redux';
-import { addPost } from './../store/feedSlices';
+import { addPost, setPost } from './../store/feedSlices';
 import axios from "axios";
 import "./ContentCreator.css";
 
 const ContentCreator = () => {
     const dispatch = useDispatch();
     const [content, setContent] = useState('');
+    const [authorName, setAuthorName] = useState('');
+    const [authorId, setAuthorId] = useState('');
     const [image, setImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
 
@@ -28,23 +30,36 @@ const ContentCreator = () => {
 			alert('Please enter some content');
 			return;
 		}
-
-		const postData = {
-			content,
-			authorName: 'march 15',
-			authorId: '123',
-			image
-		};
+        if(authorId.trim()) { setAuthorId(authorId) };
+        if(authorName.trim()) { setAuthorName(authorName) };
 
 		try {
-			const test = await dispatch(addPost(postData));
-			console.log(test);
+
+            // Use FormData to ensure the Server/Multer can read the fields
+            const formData = new FormData();
+            formData.append("content", content);
+            formData.append("authorName", authorName || 'Anonymous');
+            formData.append("authorId", authorId || '000');
+            
+            // Only append if there's actually a file
+            if (image) {
+                formData.append("image", image);
+            }
+
+            const response = await axios.post("http://localhost:3000/posts", formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            console.log("Response from Server:", response.data);
+            dispatch(addPost(response.data)); // Update the Client Store
 			// Clear form
 			setContent('');
 			setImage(null);
 			setImagePreview(null);
-		} catch (err) {
-			alert('❌ Failed to create post: ' + err);
+            setAuthorId('');
+            setAuthorName('');
+		} catch (error) {
+			console.error(error.response);
 		}
 	};
 
@@ -60,8 +75,22 @@ const ContentCreator = () => {
                     id="story" 
                     name="story" 
                     rows="5" 
-                    cols="33">
-                </textarea>                   
+                    cols="50">
+                </textarea>
+                <input
+                    value={authorName}
+                    onChange={(e)=>{setAuthorName(e.target.value)}}
+                    id="authorName"
+                    size="50"
+                    placeholder="authorName">
+                </input>
+                <input
+                    value={authorId}
+                    onChange={(e)=>{setAuthorId(e.target.value)}}
+                    id="authorId"
+                    size="50"
+                    placeholder="authorId">
+                </input>                   
                 <label>
                     Choose image to upload
                     <input 
