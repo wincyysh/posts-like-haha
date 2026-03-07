@@ -2,9 +2,16 @@
 import React from "react";
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 
+const initialState = {
+    posts: [],
+    // 'idle' | 'loading' | 'succeeded' | 'failed'
+    status: 'idle',
+    error: null
+}
+
 const feedSlice = createSlice({
     name: 'feed',
-    initialState: { posts: [], },
+    initialState,
     reducers: {
         addPost: (state, action) => {
             state.posts.unshift(action.payload);

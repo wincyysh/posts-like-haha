@@ -1,8 +1,7 @@
 // frontend/src/components/ContentCreator.jsx
 import React, { useState } from "react";
 import { useDispatch } from 'react-redux';
-import { addPost, setPost } from './../store/feedSlices';
-import axios from "axios";
+import { addPost } from './../store/feedSlices';
 import "./ContentCreator.css";
 
 const ContentCreator = () => {
@@ -33,32 +32,16 @@ const ContentCreator = () => {
         if(authorId.trim()) { setAuthorId(authorId) };
         if(authorName.trim()) { setAuthorName(authorName) };
 
-		try {
-
-            // Use FormData to ensure the Server/Multer can read the fields
-            const formData = new FormData();
-            formData.append("content", content);
-            formData.append("authorName", authorName || 'Anonymous');
-            formData.append("authorId", authorId || '000');
-            
-            // Only append if there's actually a file
-            if (image) {
-                formData.append("image", image);
-            }
-
-            const response = await axios.post("http://localhost:3000/posts", formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            console.log("Response from Server:", response.data);
-            dispatch(addPost(response.data)); // Update the Client Store
+		try{
+            // Update the Client Store
+            await dispatch(addPost(response.data)); 
 			// Clear form
 			setContent('');
 			setImage(null);
 			setImagePreview(null);
             setAuthorId('');
             setAuthorName('');
-		} catch (error) {
+		}catch(error){
 			console.error(error.response);
 		}
 	};
