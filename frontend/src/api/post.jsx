@@ -71,10 +71,24 @@ export const createPost = async (postData) => {
 // ========================================
 // Patch a Existing Post
 // ========================================
-export const patchPost = async () => {
+export const patchPost = async (postId, reactionType) => {
     try {
-
+        const response = await api.patch(`/posts/${postId}/react`, {
+            reactionType
+        });
+        return response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Patch a Existing Post Failed');
     }
 };
+
+export const deletePost = async (postId) => {
+    try {
+        const response = await api.delete(`/posts/${postId}`);
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || 'Delete a Existing Post Failed');
+    }
+};
+
+export default api;
