@@ -4,6 +4,11 @@ import { useDispatch } from 'react-redux';
 import { addPost } from './../store/feedSlices';
 import "./ContentCreator.css";
 
+// ========================================
+// ContentCreator()
+//     handleSubmit()
+//     handleImage()
+// ========================================
 const ContentCreator = () => {
     const dispatch = useDispatch();
     const [content, setContent] = useState('');
