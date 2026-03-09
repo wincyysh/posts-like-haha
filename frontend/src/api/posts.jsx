@@ -1,3 +1,4 @@
+// frontend/src/api/posts.jsx
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -48,7 +49,7 @@ export const fetchPosts = async () => {
 // ========================================
 // Create a New Post
 // ========================================
-export const createPost = async (postData) => {
+export const createPosts = async (postData) => {
     try {
         // Use FormData to ensure the Server/Multer can read the fields
         const formData = new FormData();
@@ -71,7 +72,7 @@ export const createPost = async (postData) => {
 // ========================================
 // Patch a Existing Post
 // ========================================
-export const patchPost = async (postId, reactionType) => {
+export const patchPosts = async (postId, reactionType) => {
     try {
         const response = await api.patch(`/posts/${postId}/react`, {
             reactionType
@@ -82,7 +83,7 @@ export const patchPost = async (postId, reactionType) => {
     }
 };
 
-export const deletePost = async (postId) => {
+export const deletePosts = async (postId) => {
     try {
         const response = await api.delete(`/posts/${postId}`);
         return response.data;
