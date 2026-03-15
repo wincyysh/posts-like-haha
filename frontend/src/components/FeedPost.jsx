@@ -59,6 +59,34 @@ const FeedPost = () => {
             </div>
         );
     }
+    if (posts.length === 0) {
+        return (
+            <div className="empty-container">
+                <h3> No Posts Yet </h3>
+                <p>Be the first to create a post</p>
+            </div>
+        );
+    }
+    const PostCard = ({ post, onDelete }) => {
+        const authorInitial = post.author?.name?.charAt(0).toUpperCase() ?? 'Anonymous';
+        const authorName = post.author?.name ?? 'Anonymous';
+
+        return (
+            <div className="post-card">
+                <div className="post-header">
+                    <div className="author-info">
+                        <div className="author-avatar">{authorInitial}</div>
+                        <div className="author-detail">
+                            <div className="author-name">{authorName}</div>
+                            <div className="post-timestamp">{formateDate(post.createdAt)}</div>
+                        </div>
+                    </div>
+                    
+                </div>
+
+            </div>
+        );
+    }
 };
 
 export default FeedPost;
