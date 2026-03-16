@@ -10,14 +10,14 @@ const FeedPost = () => {
 
     const dispatch = useDispatch();
     const { posts, status, error } = useSelector((state) => { state.feed });
-    useEffect( () => { dispatch(fetchPosts()); }, [dispatch]);
-    
+    useEffect(() => { dispatch(fetchPosts()); }, [dispatch]);
+
     const handleReaction = (postId, reactionType) => {
-        dispatch(patchPosts({postId, reactionType}));
+        dispatch(patchPosts({ postId, reactionType }));
     };
-    
+
     const handleDelete = (postId) => {
-        if(window.confirm('Are you sure to delete the post?')){
+        if (window.confirm('Are you sure to delete the post?')) {
             dispatch(deletePosts(postId));
         }
     };
@@ -31,14 +31,14 @@ const FeedPost = () => {
         const diffDays = Math.floor(diffMs / 86400000);
 
         if (diffMins < 1) return 'Just Now';
-        if (diffMins < 1) return `${diffMins}m ago`;
+        if (diffMins < 60) return `${diffMins}m ago`;
         if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`; 
+        if (diffDays < 7) return `${diffDays}d ago`;
 
         return date.toLocaleDateString();
     }
 
-    if (status === 'loading' && posts.length === 0){
+    if (status === 'loading' && posts.length === 0) {
         return (
             <div className="loading-container">
                 <h3>Loading posts ... </h3>
@@ -81,12 +81,20 @@ const FeedPost = () => {
                             <div className="post-timestamp">{formateDate(post.createdAt)}</div>
                         </div>
                     </div>
-                    
+                    <button
+                        onClick={() => onDelete(post._id)}
+                        className="delete-button"
+                        title="delete"
+                    >
+                        delete
+                    </button>
                 </div>
-
+                <div className="post-content"> {post.content} </div>
+                {post.imageUrl && <PostImage url={post.imageUrl} />}
             </div>
         );
-    }
+    };
+    { posts.map((post) => (<PostCard key={post._id} post={post} onDelete={handleDelete} />)) }
 };
 
 export default FeedPost;
