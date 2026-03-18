@@ -35,23 +35,20 @@ export const fetchPosts = createAsyncThunk(
 );
 
 export const createPosts = createAsyncThunk(
-    'feed/createPosts', async () => {
-        const response = await postsAPI.createPosts();
+    'feed/createPosts', async (postData) => {
+        const response = await postsAPI.createPosts(postData);
         return response;
     }
 );
 
 export const patchPosts = createAsyncThunk(
-    'feed/patchPosts', async () => {
-        const response = await postsAPI.patchPosts();
-        return response;
-    }
+    'feed/patchPosts', async ({ postId, reactionType }) => postsAPI.patchPosts(postId, reactionType)
 );
 
 export const deletePosts = createAsyncThunk(
-    'feed/deletePosts', async () => {
-        const response = await postsAPI.deletePosts();
-        return response;
+    'feed/deletePosts', async (postId) => {
+        await postsAPI.deletePosts(postId);
+        return postId;
     }
 );
 
@@ -63,7 +60,7 @@ const feedSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-        // Test MongoDB Connection
+            // Test MongoDB Connection
             .addCase(testMongoDBConnection.pending, (state) => {
                 state.connectionTests.mongodb = { status: 'testing' };
             })
@@ -73,7 +70,7 @@ const feedSlice = createSlice({
             .addCase(testMongoDBConnection.rejected, (state, action) => {
                 state.connectionTests.mongodb = { status: 'failed', error: action.error.message };
             })
-        // Test AWS Connection
+            // Test AWS Connection
             .addCase(testAWSConnection.pending, (state) => {
                 state.connectionTests.aws = { status: 'testing' };
             })
@@ -83,20 +80,20 @@ const feedSlice = createSlice({
             .addCase(testAWSConnection.rejected, (state, action) => {
                 state.connectionTests.aws = { status: 'failed', error: action.error.message };
             })
-        // Fetch Posts
+            // Fetch Posts
             .addCase(fetchPosts.pending, (state) => {
                 state.status = 'loading';
             })
             .addCase(fetchPosts.fulfilled, (state, action) => {
                 state.status = 'success';
-                state.posts = action.payload;
+                state.posts = action.payload.data;
                 state.error = null;
             })
             .addCase(fetchPosts.rejected, (state, action) => {
                 state.status = 'failed';
                 state.error = action.error.message;
             })
-        // Create Posts
+            // Create Posts
             .addCase(createPosts.pending, (state) => {
                 state.status = 'loading';
             })
@@ -109,17 +106,19 @@ const feedSlice = createSlice({
                 state.status = 'failed';
                 state.error = action.error.message;
             })
-        // Patch Posts
+            // Patch Posts
             .addCase(patchPosts.fulfilled, (state, action) => {
-                const index = state.posts.findIndex((post) => post._id === action.payload._id);
-                if (index !== -1) { state.posts[index] = action.payload; }
+                // forgot to add updatedPost then won't updated patch automaticlly
+                const updatedPost = action.payload.data;
+                const index = state.posts.findIndex((post) => post._id === updatedPost._id);
+                if (index !== -1) { state.posts[index] = updatedPost; }
             })
-        // Delete Posts
+            // Delete Posts
             .addCase(deletePosts.fulfilled, (state, action) => {
-                state.posts = state.posts.filter((post) => post._id !== action.payload._id);
-            })          
+                state.posts = state.posts.filter((post) => post._id !== action.payload);
+            })
     }
-    
+
 });
 
 export const { clearError } = feedSlice.actions;

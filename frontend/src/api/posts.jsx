@@ -40,6 +40,7 @@ export const testAWSConnection = async () => {
 export const fetchPosts = async () => {
     try {
         const response = await api.get('/posts');
+        console.log(response.data)
         return response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Fetch All Posts Failed');

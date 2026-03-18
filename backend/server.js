@@ -1,12 +1,12 @@
 // /backend/server.js
 import express from 'express';
-import mongoose, { ConnectionStates } from 'mongoose';
+import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Schema } from 'mongoose';
-import { S3Client, PutObjectCommand, GetObjectCommand, Bucket$ } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import multer from 'multer';
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+// import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // ========================================
 // Body parsing middleware
@@ -23,12 +23,12 @@ app.use(express.urlencoded({ extended: true }));
 // ========================================
 // MongoDB Configuration
 // ========================================
-const connectDB = async ()=>{
+const connectDB = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('MongoDB connected');
         console.log('Database:', mongoose.connection.name);
-    } catch (error){
+    } catch (error) {
         console.error('MongoDB connection failed: ', error.message);
     }
 }
@@ -38,18 +38,18 @@ const connectDB = async ()=>{
 // https://mongoosejs.com/docs/guide.html#definition
 // String is shorthand for {type: String}
 // ========================================
-const postSchema = new Schema({ 
-  content: { type: String, required: true },
-  author: {
-    id: String,
-    name: String
-  },
-  imageUrl: String,
-  interaction: {
-    like: { type: Number, default: 0 },
-    haha: { type: Number, default: 0 }
-  },
-  date: { type: Date, default: Date.now }
+const postSchema = new Schema({
+    content: { type: String, required: true },
+    author: {
+        id: String,
+        name: String
+    },
+    imageUrl: String,
+    reactions: {
+        likes: { type: Number, default: 0 },
+        hahas: { type: Number, default: 0 }
+    },
+    date: { type: Date, default: Date.now }
 });
 
 const Post = mongoose.model('Post', postSchema);
@@ -60,7 +60,7 @@ const Post = mongoose.model('Post', postSchema);
 // https://docs.aws.amazon.com/AmazonS3/latest/API/s3_example_s3_PutObject_section.html
 // ========================================
 const connectS3Client = new S3Client({
-    region:  process.env.AWS_REGION || 'AWS_REGION',
+    region: process.env.AWS_REGION || 'AWS_REGION',
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'AWS_ACCESS_KEY_ID',
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'AWS_SECRET_ACCESS_KEY'
@@ -73,7 +73,7 @@ const upload = multer({ storage: storage });
 // ========================================
 // test if web app SERVER is running
 // ========================================
-app.get('/',(req,res)=>{
+app.get('/', (req, res) => {
     res.json({
         status: 'Sucsess',
         name: 'News Feed Web APP',
@@ -84,7 +84,7 @@ app.get('/',(req,res)=>{
 // ========================================
 // test connection of MongoDB
 // ========================================
-app.get('/api/test-db', async (req, res)=>{
+app.get('/api/test-db', async (req, res) => {
     try {
         const dbState = mongoose.connection.readyState;
         const states = {
@@ -96,7 +96,7 @@ app.get('/api/test-db', async (req, res)=>{
         res.json({
             status: 'success',
             message: 'Database Connection Test',
-            ConnectionStates: states[dbState],
+            connectionState: states[dbState],
             isConnected: dbState === 1
         });
     } catch (error) {
@@ -116,7 +116,7 @@ app.get('/api/test-aws', async (req, res) => {
             Body: 'AWS Connection Test'
         };
         const command = new PutObjectCommand(testAWSParams);
-        await S3Client.send(command);
+        await connectS3Client.send(command);
         res.json({
             status: 'success',
             message: 'AWS S3 connection successful'
@@ -129,15 +129,15 @@ app.get('/api/test-aws', async (req, res) => {
 // ========================================
 // Fetch Posts From MongoDB
 // ========================================
-app.get('/api/posts', async (req, res)=>{
-    try{
-        const posts = await Post.find().sort({ createdAt: -1 });
+app.get('/api/posts', async (req, res) => {
+    try {
+        const posts = await Post.find().sort({ date: -1 });
         res.json({
             status: 'success',
             count: posts.length,
             data: posts
         });
-    }catch(error){
+    } catch (error) {
         console.error('Failed to fetch posts from MongoDB : ', error.message);
         res.status(500).json({ message: "Server error" });
     }
@@ -148,16 +148,16 @@ app.get('/api/posts', async (req, res)=>{
 // upload to both MongoDB & AWS S3
 // ========================================
 app.post('/api/posts', upload.single('image'), async (req, res) => {
-    try{
+    try {
         let awsImageUrl = '';
         if (req.file) {
             // unique imageName in s3, the buffer from multer;
-            const imageName = `posts/${Date.now()}_${req.file.originalname}`; 
+            const imageName = `posts/${Date.now()}_${req.file.originalname}`;
             const params = {
-                Bucket: process.env.AWS_BUCKET_NAME, 
+                Bucket: process.env.AWS_BUCKET_NAME,
                 Key: imageName,
                 // so that the s3 store file correct not mixup types
-                Body: req.file.buffer, 
+                Body: req.file.buffer,
                 ContentType: req.file.mimetype
             };
             const command = new PutObjectCommand(params);
@@ -176,10 +176,63 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
         // Send the saved post back to React
         res.status(201).json(savedPost);
 
-    } catch (error){
-        res.status(500).json({ error: error.message }); 
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 
+});
+
+// ========================================
+// Patch A existing POST 
+// upload to both MongoDB & AWS S3
+// ========================================
+app.patch('/api/posts/:id/react', async (req, res) => {
+    try {
+        const { reactionType } = req.body;
+        const post = await Post.findById(req.params.id);
+
+        if (!post) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Post not found'
+            });
+        }
+
+        post.reactions[reactionType] += 1;
+        await post.save();
+
+        res.json({
+            status: 'success',
+            data: post
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+app.delete('/api/posts/:id', async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Post not found'
+            });
+        }
+        res.json({
+            status: 'success',
+            message: 'Post deleted successfully'
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
 });
 
 // ========================================
@@ -196,31 +249,3 @@ const startServer = async () => {
 }
 
 startServer();
-
-
-// ========================================
-// check if uploaded seccussfully
-// This route is now a "Fixed" path
-// We get the key from the ?key= part of the URL
-// DEBUG: Check if variables are actually loading
-//   console.log("Key Exists?:", !!fileKey);
-// ========================================
-// app.get("/get-image", async (req, res) => {
-//   const fileKey = req.query.key; 
-
-//   if (!fileKey) { return res.status(400).json({ error: "Missing 'key' parameter" }); }
-
-//   try {
-//     const command = new GetObjectCommand({
-//         Bucket: process.env.AWS_BUCKET_NAME,
-//         Key: fileKey,
-//     });
-
-//     const url = await getSignedUrl(connectS3Client, command, { expiresIn: 3600 });
-//     res.json({ url });
-    
-//   } catch (err) {
-//     console.error("S3 Error:", err);
-//     res.status(500).json({ error: "Could not generate S3 URL" });
-//   }
-// });

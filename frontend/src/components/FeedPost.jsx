@@ -1,16 +1,16 @@
 // frontend/src/components/FeedPost.jsx
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchPosts, patchPosts, deletePosts } from './../store/feedSlices';
+import { fetchPosts, patchPosts, deletePosts } from '../store/feedSlices';
 import './FeedPost.css';
 // ========================================
-// formateDate = (dateString) => {}
+// formatDate = (dateString) => {}
 // ========================================
-const formateDate = (dateString) => {
+const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
-    const diffMins = mathfloor(diffMs / 60000);
+    const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
@@ -34,17 +34,17 @@ const LoadingView = () => (
 // ========================================
 // FailedView = () => ()
 // ========================================
-const FailedView = (error, onRetry) => (
+const FailedView = ({ error, onRetry }) => (
     <div className="error-container">
         <h3> Error Loading posts </h3>
         <p>{error}</p>
         <button
-            onClick={(onRetry) => dispatch(fetchPosts())}
+            onClick={onRetry}
             className="retry-buttom"
         >
             retry
         </button>
-    </div>
+    </div >
 );
 
 // ========================================
@@ -81,7 +81,7 @@ const PostImage = ({ url }) => {
 const PostReactions = ({ reactions }) => (
     <div className="reactions-container">
         {reactions?.likes > 0 && <span className="reaction-count"> 👍 {reactions.likes} </span>}
-        {reactions?.haha > 0 && <span className="reaction-count"> 😂 {reactions.haha} </span>}
+        {reactions?.hahas > 0 && <span className="reaction-count"> 😂 {reactions.hahas} </span>}
     </div>
 );
 
@@ -99,7 +99,7 @@ const PostCard = ({ post, onDelete, onReaction }) => {
                     <div className="author-avatar">{authorInitial}</div>
                     <div className="author-detail">
                         <div className="author-name">{authorName}</div>
-                        <div className="post-timestamp">{formateDate(post.createdAt)}</div>
+                        <div className="post-timestamp">{formatDate(post.date)}</div>
                     </div>
                 </div>
                 <button
@@ -117,7 +117,7 @@ const PostCard = ({ post, onDelete, onReaction }) => {
 
             <div className="actions-container">
                 <button onClick={() => onReaction(post._id, 'likes')} className="action-button"> 👍 Like </button>
-                <button onClick={() => onReaction(post._id, 'haha')} className="action-button"> 😂 haha </button>
+                <button onClick={() => onReaction(post._id, 'hahas')} className="action-button"> 😂 haha </button>
             </div>
         </div>
     );
@@ -129,7 +129,7 @@ const PostCard = ({ post, onDelete, onReaction }) => {
 const FeedPost = () => {
 
     const dispatch = useDispatch();
-    const { posts, status, error } = useSelector((state) => { state.feed });
+    const { posts, status, error } = useSelector((state) => state.feed);
 
     useEffect(() => { dispatch(fetchPosts()); }, [dispatch]);
 
