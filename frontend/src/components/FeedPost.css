@@ -1,0 +1,159 @@
+.feed-post-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.feed-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #999;
+    padding: 0 4px;
+}
+
+.post-card {
+    background: #ffffff;
+    border: 0.5px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.post-body {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.author-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.author-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #EEEDFE;
+    color: #3C3489;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.author-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+.post-timestamp {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 1px;
+}
+
+.delete-button {
+    font-size: 12px;
+    color: #bbb;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 0.5px solid rgba(0, 0, 0, 0.08);
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.delete-button:hover {
+    color: #e24b4a;
+    border-color: #e24b4a33;
+    background: #fcebeb;
+}
+
+.post-content {
+    font-size: 14px;
+    color: #1a1a1a;
+    line-height: 1.65;
+}
+
+.post-image-container {
+    margin: 0 -20px;
+    height: 80;
+    background: '#f5f5f3';
+}
+
+.post-image {
+    width: 100%;
+}
+
+.reactions-container {
+    display: flex;
+    gap: 6px;
+    font-size: 13px;
+    color: #888;
+}
+
+.reaction-count {
+    font-size: 13px;
+    color: #aaa;
+}
+
+.actions-container {
+    padding: 10px 20px;
+    border-top: 0.5px solid rgba(0, 0, 0, 0.07);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: #666;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 0.5px solid rgba(0, 0, 0, 0.1);
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.action-button:hover {
+    background: #f5f5f3;
+}
+
+.loading-container,
+.error-container,
+.empty-container {
+    background: #fff;
+    border: 0.5px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.retry-button {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #1a1a1a;
+    padding: 6px 16px;
+    border-radius: 8px;
+    border: 0.5px solid rgba(0, 0, 0, 0.15);
+    background: #f0f0ee;
+    cursor: pointer;
+    font-family: inherit;
+}

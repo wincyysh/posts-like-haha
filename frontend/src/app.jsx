@@ -2,6 +2,7 @@
 import React from 'react';
 import ContentCreator from './components/ContentCreator';
 import FeedPost from './components/FeedPost';
+import './app.css';
 
 function App() {
     return (

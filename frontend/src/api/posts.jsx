@@ -40,10 +40,18 @@ export const testAWSConnection = async () => {
 export const fetchPosts = async () => {
     try {
         const response = await api.get('/posts');
-        console.log(response.data)
         return response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Fetch All Posts Failed');
+    }
+};
+
+export const getImageUrl = async (key) => {
+    try {
+        const response = await api.get(`/image-url?key=${key}`);
+        return response.data.url;
+    } catch (error) {
+        throw new Error('Failed to get image URL');
     }
 };
 

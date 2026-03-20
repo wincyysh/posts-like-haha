@@ -1,1 +1,143 @@
 /* frontend/src/components/ContentCreator.css */
+.content-creator {
+    background: #ffffff;
+    border: 0.5px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.creator-top {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.content-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #EEEDFE;
+    color: #3C3489;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.creator-fields {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.creator-textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    resize: none;
+    font-size: 14px;
+    color: #1A1A1A;
+    background: transparent;
+    line-height: 1.6;
+    font-family: inherit;
+    padding: 4px 0;
+}
+
+.creator-textrea::placeholder {
+    color: #AAA;
+}
+
+.creator-input {
+    width: 100%;
+    border: none;
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.8);
+    outline: none;
+    font-size: 13px;
+    color: #1A1A1A;
+    background: transparent;
+    padding: 4px 0;
+    font-family: inherit;
+}
+
+.creator-input::placeholder {
+    color: #bbb;
+}
+
+.creator-divider {
+    height: 0.5px;
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.creator-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.creator-image-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #666;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 0.5px solid rgba(0, 0, 0, 0.1);
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.creator-image-btn:hover {
+    background: #f5f5f3;
+}
+
+.creator-submit {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a1a1a;
+    padding: 6px 18px;
+    border-radius: 8px;
+    border: 0.5px solid rgba(0, 0, 0, 0.15);
+    background: #f0f0ee;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.creator-submit:hover {
+    background: #e8e8e5;
+}
+
+.creator-preview {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 0.5px solid rgba(0, 0, 0, 0.08);
+}
+
+.creator-preview img {
+    width: 100%;
+    max-height: 240px;
+    object-fit: cover;
+    display: block;
+}
+
+.creator-remove-img {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 12px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.45);
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-family: inherit;
+}

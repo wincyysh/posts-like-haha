@@ -4,9 +4,9 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Schema } from 'mongoose';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import multer from 'multer';
-// import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // ========================================
 // Body parsing middleware
@@ -44,7 +44,7 @@ const postSchema = new Schema({
         id: String,
         name: String
     },
-    imageUrl: String,
+    imageKey: String,
     reactions: {
         likes: { type: Number, default: 0 },
         hahas: { type: Number, default: 0 }
@@ -59,7 +59,7 @@ const Post = mongoose.model('Post', postSchema);
 // AWS S3  Configuration (image upload)
 // https://docs.aws.amazon.com/AmazonS3/latest/API/s3_example_s3_PutObject_section.html
 // ========================================
-const connectS3Client = new S3Client({
+const s3Client = new S3Client({
     region: process.env.AWS_REGION || 'AWS_REGION',
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'AWS_ACCESS_KEY_ID',
@@ -116,7 +116,7 @@ app.get('/api/test-aws', async (req, res) => {
             Body: 'AWS Connection Test'
         };
         const command = new PutObjectCommand(testAWSParams);
-        await connectS3Client.send(command);
+        await s3Client.send(command);
         res.json({
             status: 'success',
             message: 'AWS S3 connection successful'
@@ -143,6 +143,7 @@ app.get('/api/posts', async (req, res) => {
     }
 });
 
+
 // ========================================
 // CREATE A NEW POST 
 // upload to both MongoDB & AWS S3
@@ -161,15 +162,16 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
                 ContentType: req.file.mimetype
             };
             const command = new PutObjectCommand(params);
-            await connectS3Client.send(command);
-            awsImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageName}`;
+            await s3Client.send(command);
+            // awsImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${imageName}`;
+            awsImageUrl = imageName;
         }
 
         const { content, authorName, authorId } = req.body;
         const newPost = new Post({
             content: content,
             author: { id: authorId, name: authorName },
-            imageUrl: awsImageUrl,
+            imageKey: awsImageUrl,
             interaction: { likes: 0, haha: 0 }
         });
         const savedPost = await newPost.save();
@@ -180,6 +182,22 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 
+});
+
+app.get('/api/image-url', async (req, res) => {
+    try {
+        const { key } = req.query;
+        if (!key) return res.status(400).json({ message: 'Missing Key' });
+
+        const command = new GetObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: key,
+        });
+        const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+        res.json({ url });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
 // ========================================
@@ -223,11 +241,20 @@ app.delete('/api/posts/:id', async (req, res) => {
                 message: 'Post not found'
             });
         }
+        if (post.imageKey) {
+            const command = new DeleteObjectCommand({
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: post.imageKey,
+            });
+            await s3Client.send(command);
+        }
+        await post.deleteOne();
         res.json({
             status: 'success',
             message: 'Post deleted successfully'
         });
     } catch (error) {
+        console.error('DELETE /api/posts/:id error:', error.message);
         res.status(500).json({
             status: 'error',
             message: error.message

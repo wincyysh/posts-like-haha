@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchPosts, patchPosts, deletePosts } from '../store/feedSlices';
+import { getImageUrl } from "../api/posts";
 import './FeedPost.css';
 // ========================================
 // formatDate = (dateString) => {}
@@ -60,9 +61,20 @@ const EmptyView = () => (
 // ========================================
 // PostImage = ({ url }) => {}
 // ========================================
-const PostImage = ({ url }) => {
+const PostImage = ({ imageKey }) => {
+    const [url, setUrl] = useState(null);
     const [failed, setFailed] = useState(false);
+
+    useEffect(() => {
+        if (!imageKey) return;
+        getImageUrl(imageKey)
+            .then(setUrl)
+            .catch(() => setFailed(true));
+    }, [imageKey]);
+
     if (failed) return <p> Image Failed To Load </p>;
+    if (!url) return <div className="post-image-container" style={{ height: 80, background: '#f5f5f3' }} />;
+
     return (
         <div className="post-image-container">
             <img
@@ -94,30 +106,30 @@ const PostCard = ({ post, onDelete, onReaction }) => {
 
     return (
         <div className="post-card">
-            <div className="post-header">
-                <div className="author-info">
-                    <div className="author-avatar">{authorInitial}</div>
-                    <div className="author-detail">
-                        <div className="author-name">{authorName}</div>
-                        <div className="post-timestamp">{formatDate(post.date)}</div>
+            <div className="post-body">
+                <div className="post-header">
+                    <div className="author-info">
+                        <div className="author-avatar">{authorInitial}</div>
+                        <div className="author-detail">
+                            <div className="author-name">{authorName}</div>
+                            <div className="post-timestamp">{formatDate(post.date)}</div>
+                        </div>
                     </div>
+                    <button
+                        onClick={() => onDelete(post._id)}
+                        className="delete-button"
+                        title="delete"
+                    >
+                        delete
+                    </button>
                 </div>
-                <button
-                    onClick={() => onDelete(post._id)}
-                    className="delete-button"
-                    title="delete"
-                >
-                    delete
-                </button>
-            </div>
-
-            <div className="post-content"> {post.content} </div>
-            {post.imageUrl && <PostImage url={post.imageUrl} />}
-            <PostReactions reactions={post.reactions} />
-
-            <div className="actions-container">
-                <button onClick={() => onReaction(post._id, 'likes')} className="action-button"> 👍 Like </button>
-                <button onClick={() => onReaction(post._id, 'hahas')} className="action-button"> 😂 haha </button>
+                <div className="post-content"> {post.content} </div>
+                {post.imageKey && <PostImage imageKey={post.imageKey} />}
+                <PostReactions reactions={post.reactions} />
+                <div className="actions-container">
+                    <button onClick={() => onReaction(post._id, 'likes')} className="action-button"> 👍 Like </button>
+                    <button onClick={() => onReaction(post._id, 'hahas')} className="action-button"> 😂 haha </button>
+                </div>
             </div>
         </div>
     );
