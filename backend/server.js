@@ -19,7 +19,7 @@ const app = express();
 app.use(cors({
     origin: [
         'http://localhost:5173',
-        ''
+        'https://d2iwi61q6n3ty1.cloudfront.net'
     ]
 }));
 app.use(express.json());
@@ -272,7 +272,7 @@ app.delete('/api/posts/:id', async (req, res) => {
 // ========================================
 const startServer = async () => {
     await connectDB();
-    const PORT = process.env.PORT
+    const PORT = process.env.PORT || 8080;
     app.listen(PORT, () => {
         console.log(`Web Server is on PORT ${PORT}`);
         console.log(`Test MongoDB connection is on http://localhost:${PORT}/api/test-db`);

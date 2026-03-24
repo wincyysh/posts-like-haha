@@ -7,13 +7,16 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+
+
+# Security password etc.
+.env
+*.zip
 node_modules
 dist
 dist-ssr
 *.local
 
-# Security password etc.
-.env
 
 # Editor directories and files
 .vscode/*
