@@ -16,10 +16,20 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 // ========================================
 dotenv.config();
 const app = express();
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'https://d2iwi61q6n3ty1.cloudfront.net');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    next();
+});
 app.use(cors({
     origin: [
         'http://localhost:5173',
-        'https://d2iwi61q6n3ty1.cloudfront.net'
+        'https://d2iwi61q6n3ty1.cloudfront.net',     // frontend
+        'https://d1tissxm6lgoge.cloudfront.net'       // API CloudFront
     ]
 }));
 app.use(express.json());
@@ -73,7 +83,10 @@ const s3Client = new S3Client({
 });
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 // ========================================
 // test if web app SERVER is running
@@ -177,7 +190,7 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
             content: content,
             author: { id: authorId, name: authorName },
             imageKey: awsImageUrl,
-            interaction: { likes: 0, haha: 0 }
+            // reactions: { likes: 0, haha: 0 }
         });
         const savedPost = await newPost.save();
         // Send the saved post back to React
