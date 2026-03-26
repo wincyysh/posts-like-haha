@@ -10,10 +10,13 @@ A Full Stack news feed web application built with React, Redux Toolkit, MongoDB,
 - Build a social news feed with posts, reactions and images
 
 ##  Technology
-- MongoDB
-- AWS S3
-- AWS Elastic Beanstalk
-- AWS CloudFront
+| Layer    | Technology |
+|----------|------------|
+| Frontend | React 19, Redux Toolkit, Axios, Vite |
+| Backend  | Node.js, Express 5, Mongoose |
+| Database | MongoDB Atlas |
+| Image Storage | AWS S3 |
+| Hosting | AWS Elastic Beanstalk (backend), AWS S3 + CloudFront (frontend)
 
 ## Project Structure
 ```
@@ -49,10 +52,25 @@ A Full Stack news feed web application built with React, Redux Toolkit, MongoDB,
 ---
 
 ## Quick Start
+ 
+### Local Development Setup Prerequisites
+- Node.js 20+
+- MongoDB Atlas account
+- AWS account with S3 bucket
 
-### 1. Install Dependencies
+### 1. Backend Install Dependencies
 ```bash
 # Backend
 cd backend
 npm install
+```
+
+### 2. Create `backend/.env`:
+```
+MONGODB_URI=your_mongodb_atlas_connection_string
+AWS_REGION=your_region
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_BUCKET_NAME=your_bucket_name
+PORT=3000
 ```
