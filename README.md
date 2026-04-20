@@ -1,4 +1,5 @@
 # posts-like-haha
+[Try the live app here:](https://d2iwi61q6n3ty1.cloudfront.net)
 
 A Full Stack news feed web application built with React, Redux Toolkit, MongoDB, and AWS S3.
 
